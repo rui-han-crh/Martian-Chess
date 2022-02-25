@@ -159,7 +159,7 @@ public class HypotheticalBoard : IChessboardActions {
         grid[destination.x + xSizeOffset, destination.y + ySizeOffSet] = pieceToMove;
         pieceToMove.SetPiecePosition(destination);
         scoreKeeper.UpdateScore(this);
-        movesUntilCapitulation--;
+        //movesUntilCapitulation--;
     }
 
     public void RemovePieceAtPosition(Vector2Int gridPosition, Player player) {

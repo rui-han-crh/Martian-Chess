@@ -12,6 +12,7 @@ public class ChessBoardBehaviour : MonoBehaviour {
     private static readonly int xSizeOffset = xSize / 2;
     private static readonly int ySize = 8;
     private static readonly int ySizeOffSet = ySize / 2;
+    private static readonly float LINE_WIDTH = 0.05f;
 
     private InputBindings bindings;
 
@@ -23,6 +24,8 @@ public class ChessBoardBehaviour : MonoBehaviour {
     [SerializeField]
     private Piece selectedPiece;
     private MovementMarkerManager markerManager;
+
+    private LineRenderer lineRenderer;
 
     [SerializeField]
     private GameObject winFlag;
@@ -54,6 +57,7 @@ public class ChessBoardBehaviour : MonoBehaviour {
 
     private CancellationTokenSource tokenSource;
 
+
     public void Awake() {
         bindings = new InputBindings();
         tokenSource = new CancellationTokenSource();
@@ -76,6 +80,11 @@ public class ChessBoardBehaviour : MonoBehaviour {
         bindings.Keyboard.MouseClick.performed += ctx => MouseClick();
 
         markerManager = GetComponent<MovementMarkerManager>();
+        lineRenderer = GetComponent<LineRenderer>();
+        lineRenderer.startWidth = LINE_WIDTH;
+        lineRenderer.endWidth = LINE_WIDTH;
+        lineRenderer.startColor = lineRenderer.endColor = Color.red;
+
         chessboard = new HypotheticalBoard(pieceGameObjects, tileMap);
 
         foreach (GameObject pieceObject in pieceGameObjects)
@@ -135,7 +144,6 @@ public class ChessBoardBehaviour : MonoBehaviour {
 
         (origin, destination) = await Task.Run(() => opponentAI.MakeDecision(chessboard));
 
-        adversaryThinking = false;
         thinkingIndicator.SetActive(adversaryThinking);
 
         if (tokenSource.IsCancellationRequested)
@@ -151,15 +159,34 @@ public class ChessBoardBehaviour : MonoBehaviour {
             print("Adversary capture piece");
         }
 
+
+        SetLineRendererPath(pieceToMove.GetPosition(), destination);
+
         DisplayGhostPiece(pieceToMove.GetPosition());
 
         chessboard.MovePiecePosition(pieceToMove, destination);
-        UpdatePieceObjectPositionsByBoard(chessboard);
 
+
+        UpdatePieceObjectPositionsByBoard(chessboard);
+        adversaryThinking = false;
         if (chessboard.isGameOver())
         {
             ActivateGameOver();
         }
+    }
+
+    private void SetLineRendererPath(Vector2Int origin, Vector2Int destination)
+    {
+        Vector3 originalPiecePosition = tileMap.CellToWorld((Vector3Int)origin) + offset + Vector3.back;
+        Vector3 destinationPosition = tileMap.CellToWorld((Vector3Int)destination) + offset + Vector3.back;
+        lineRenderer.positionCount = 2;
+        lineRenderer.SetPosition(0, originalPiecePosition);
+        lineRenderer.SetPosition(1, destinationPosition);
+    }
+
+    private void UnsetLineRendererPath()
+    {
+        lineRenderer.positionCount = 0;
     }
 
     private void ControlPieces(Vector3Int gridPosition, Vector2Int gridPositionVector2Int) {
@@ -180,6 +207,8 @@ public class ChessBoardBehaviour : MonoBehaviour {
                     UnsetSelectedPiece();
                 }
                 UpdatePieceObjectPositionsByBoard(chessboard);
+                UnsetLineRendererPath();
+
                 print(chessboard.GetLastMove());
                 //---------------Adversary-----------------
                 if (!chessboard.isGameOver()) {
@@ -254,20 +283,6 @@ public class ChessBoardBehaviour : MonoBehaviour {
     //    }
     //    MovePiecePosition(promotedPiece, gridPositionVector2Int);
     //}
-
-    private string GetPromotedPieceString(Piece selectedPiece, Piece pieceAtDestination)
-    {
-        if (selectedPiece.GetValue() == 1 && pieceAtDestination.GetValue() == 1)
-        {
-            return "Dro";
-        } else if ((selectedPiece.GetValue() == 3 && pieceAtDestination.GetValue() == 1) 
-                    || (selectedPiece.GetValue() == 1 && pieceAtDestination.GetValue() == 3)) 
-        {
-            return "Que";
-        }
-
-        return "PieceNotFound";
-    }
 
     private void ActivateGameOver() {
         int evaluatedScore;
