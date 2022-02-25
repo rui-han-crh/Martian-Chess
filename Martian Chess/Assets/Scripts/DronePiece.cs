@@ -25,11 +25,12 @@ public class DronePiece : Piece
                 {
                     possibleLocations.Add(destination);
                 }
-                destination = positionOnBoard + unitDisplacementVector * (j + 1);
+                destination = positionOnBoard + unitDisplacementVector * (Math.Min(j + 1, 2));
                 undoneMovement = new MovementChange(destination, positionOnBoard);
             }
 
-            if (IsWithinBoard(destination) && isPromotionCriteriaMet(destination))
+            if (IsWithinBoard(destination) 
+                && (isPromotionCriteriaMet(destination) || OpponentPieceOnTile(destination)))
             {
                 possibleLocations.Add(destination);
             }
@@ -37,11 +38,15 @@ public class DronePiece : Piece
         return possibleLocations.ToArray();
     }
 
+    private bool OpponentPieceOnTile(Vector2Int destination)
+    {
+        return !(positionOnBoard.y < 0 ^ destination.y >= 0) && chessboard.HasPieceAtPosition(destination);
+    }
+
     private bool SatisfyConditionsToContinue(Vector2Int destination)
     {
         return IsWithinBoard(destination) 
-            && (!chessboard.HasPieceAtPosition(destination)
-                || !(positionOnBoard.y < 0 ^ destination.y >= 0));
+            && (!chessboard.HasPieceAtPosition(destination));
     }
 
     private bool isPromotionCriteriaMet(Vector2Int destination)
