@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -34,6 +35,9 @@ public class ChessBoardBehaviour : MonoBehaviour {
     [SerializeField]
     private GameObject thinkingIndicator;
 
+    [SerializeField]
+    private TextMeshProUGUI playerOneScoreObject, playerTwoScoreObject;
+
 
     [SerializeField]
     private GameObject[] pieceGameObjects;
@@ -51,7 +55,6 @@ public class ChessBoardBehaviour : MonoBehaviour {
     private bool onesTurn = true;
 
     private bool adversaryThinking = false;
-    private int movesUntilEnd = 14;
 
     public bool startFirst;
 
@@ -144,8 +147,6 @@ public class ChessBoardBehaviour : MonoBehaviour {
 
         (origin, destination) = await Task.Run(() => opponentAI.MakeDecision(chessboard));
 
-        thinkingIndicator.SetActive(adversaryThinking);
-
         if (tokenSource.IsCancellationRequested)
         {
             return;
@@ -168,7 +169,11 @@ public class ChessBoardBehaviour : MonoBehaviour {
 
 
         UpdatePieceObjectPositionsByBoard(chessboard);
+
         adversaryThinking = false;
+        thinkingIndicator.SetActive(adversaryThinking);
+        UpdateScoreBoard();
+
         if (chessboard.isGameOver())
         {
             ActivateGameOver();
@@ -206,8 +211,12 @@ public class ChessBoardBehaviour : MonoBehaviour {
                     chessboard.MovePiecePosition(selectedPiece, gridPositionVector2Int);
                     UnsetSelectedPiece();
                 }
+
                 UpdatePieceObjectPositionsByBoard(chessboard);
                 UnsetLineRendererPath();
+                UpdateScoreBoard();
+
+                print("Moves left " + chessboard.GetMovesLeft());
 
                 print(chessboard.GetLastMove());
                 //---------------Adversary-----------------
@@ -258,6 +267,15 @@ public class ChessBoardBehaviour : MonoBehaviour {
         }
     }
 
+    private void UpdateScoreBoard()
+    {
+        ScoreKeeper scoreKeeper = chessboard.GetScoreKeeper();
+        print(scoreKeeper.GetPlayerOneCapturedScore());
+        playerOneScoreObject.text = scoreKeeper.GetPlayerOneCapturedScore().ToString();
+        playerTwoScoreObject.text = scoreKeeper.GetPlayerTwoCapturedScore().ToString();
+        Debug.Log(chessboard.GetAllPieces(Player.ALL).Count());
+    }
+
     //private void PromotePiece(Piece selectedPiece, Vector2Int gridPositionVector2Int)
     //{
     //    Piece pieceAtDestination = GetPieceAtGridPosition(gridPositionVector2Int);
@@ -285,15 +303,7 @@ public class ChessBoardBehaviour : MonoBehaviour {
     //}
 
     private void ActivateGameOver() {
-        int evaluatedScore;
-        if (movesUntilEnd < 1) {
-            evaluatedScore = chessboard.GetScoreKeeper().GetCapturedScore();
-            if (evaluatedScore > 0) {
-                winFlag.SetActive(true);
-            } else {
-                loseFlag.SetActive(true);
-            }
-        } else if (chessboard.GetScoreKeeper().GetScore() > 0) {
+        if (chessboard.EvaluateScore() > 0) {
             winFlag.SetActive(true);
         } else {
             loseFlag.SetActive(true);

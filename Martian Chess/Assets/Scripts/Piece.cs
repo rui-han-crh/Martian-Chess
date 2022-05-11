@@ -63,4 +63,9 @@ public abstract class Piece {
 
     public abstract Vector2Int[] GetPossibleMovementPlaces(MovementChange movementChange);
     public abstract Piece Clone(IChessboardActions chessboard);
+
+    public override string ToString()
+    {
+        return this.GetType().Name + " " + GetPosition().ToString();
+    }
 }

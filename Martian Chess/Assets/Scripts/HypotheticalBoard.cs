@@ -10,6 +10,7 @@ public class HypotheticalBoard : IChessboardActions {
     private static readonly int xSizeOffset = xSize / 2;
     private static readonly int ySize = 8;
     private static readonly int ySizeOffSet = ySize / 2;
+    private static readonly int MAX_MOVES_WITHOUT_CAPTURE = 7;
 
     private Piece[] pieces;
     private Piece[,] grid;
@@ -17,7 +18,7 @@ public class HypotheticalBoard : IChessboardActions {
 
     private MovementChange lastMove;
 
-    private int movesUntilCapitulation = 14;
+    private int movesUntilCapitulation = MAX_MOVES_WITHOUT_CAPTURE;
 
     public HypotheticalBoard(GameObject[] pieceGameObjects, Tilemap tileMap)
     {
@@ -76,6 +77,7 @@ public class HypotheticalBoard : IChessboardActions {
         }
         this.scoreKeeper = chessboard.GetScoreKeeper();
         this.lastMove = chessboard.GetLastMove();
+        this.movesUntilCapitulation = chessboard.GetMovesLeft();
     }
 
     public ScoreKeeper GetScoreKeeper() {
@@ -114,7 +116,7 @@ public class HypotheticalBoard : IChessboardActions {
 
     public void MovePiecePosition(Piece piece, Vector2Int newLocation) {
         if (!DoesPieceExist(piece)) {
-            throw new Exception("Piece does not exist in this board");
+            throw new Exception($"Piece {piece} does not exist in this board");
         }
 
         Vector2Int piecePosition = piece.GetPosition();
@@ -152,22 +154,12 @@ public class HypotheticalBoard : IChessboardActions {
         throw new Exception("No promotion available");
     }
 
-    public void MovePiecePosition(Vector2Int oldPosition, Vector2Int destination, Player player) {
-        lastMove = new MovementChange(oldPosition, destination);
-        Piece pieceToMove = grid[oldPosition.x + xSizeOffset, oldPosition.y + ySizeOffSet];
-        grid[oldPosition.x + xSizeOffset, oldPosition.y + ySizeOffSet] = null;
-        grid[destination.x + xSizeOffset, destination.y + ySizeOffSet] = pieceToMove;
-        pieceToMove.SetPiecePosition(destination);
-        scoreKeeper.UpdateScore(this);
-        //movesUntilCapitulation--;
-    }
-
     public void RemovePieceAtPosition(Vector2Int gridPosition, Player player) {
         Piece piece = GetPieceAtGridPosition(gridPosition);
         piece.Remove();
         scoreKeeper.StoreCapturedPiece(piece, player);
         grid[gridPosition.x + xSizeOffset, gridPosition.y + ySizeOffSet] = null;
-        movesUntilCapitulation = 14;
+        movesUntilCapitulation = MAX_MOVES_WITHOUT_CAPTURE;
     }
 
     private void RebuildPieceArray()
@@ -187,8 +179,18 @@ public class HypotheticalBoard : IChessboardActions {
         return lastMove;
     }
 
+    public int GetMovesLeft()
+    {
+        return movesUntilCapitulation;
+    }
+
     public int EvaluateScore() {
         scoreKeeper.UpdateScore(this);
+        if (movesUntilCapitulation == 0)
+        {
+            return scoreKeeper.GetWinnerCaptureScore();
+        }
+
         return scoreKeeper.GetScore();
     }
 

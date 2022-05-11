@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using System.Linq;
 
 public class OpponentAI
 {
@@ -14,7 +15,7 @@ public class OpponentAI
     {
         this.player = player;
         this.tokenSource = tokenSource;
-        isMaximisingPlayer = player == Player.ONE ? true : false;
+        isMaximisingPlayer = player == Player.ONE;
     }
 
     public (Vector2Int, Vector2Int) MakeDecision(IChessboardActions board)
@@ -22,13 +23,13 @@ public class OpponentAI
         Node node;
         if (board.GetAllPieces(Player.ALL).Length >= 7)
         {
-            node = Minimax(new HypotheticalBoard(board), 4, isMaximisingPlayer, int.MinValue, int.MaxValue);
+            node = Minimax(new HypotheticalBoard(board), 5, isMaximisingPlayer, int.MinValue, int.MaxValue);
         } else if (board.GetAllPieces(Player.ALL).Length >= 4)
         {
-            node = Minimax(new HypotheticalBoard(board), 6, isMaximisingPlayer, int.MinValue, int.MaxValue);
+            node = Minimax(new HypotheticalBoard(board), 7, isMaximisingPlayer, int.MinValue, int.MaxValue);
         } else
         {
-            node = Minimax(new HypotheticalBoard(board), 8, isMaximisingPlayer, int.MinValue, int.MaxValue);
+            node = Minimax(new HypotheticalBoard(board), 9, isMaximisingPlayer, int.MinValue, int.MaxValue);
         }
         if (node.GetScore() == int.MinValue)
         {
@@ -60,14 +61,17 @@ public class OpponentAI
                 foreach (Vector2Int position in piece.GetPossibleMovementPlaces(lastMove))
                 {
                     HypotheticalBoard newBoard = new HypotheticalBoard(board);
+                    Vector2Int originalPosition = piece.GetPosition();
 
+                    Piece pieceInCurrentBoard = newBoard.GetPieceAtGridPosition(originalPosition);
                     Piece pieceToReplace = newBoard.GetPieceAtGridPosition(position);
-                    if (pieceToReplace != null)
+
+                    if (pieceToReplace != null && !(position.y < 0 ^ originalPosition.y >= 0))
                     {
                         newBoard.RemovePieceAtPosition(position, player);
                     }
 
-                    newBoard.MovePiecePosition(piece.GetPosition(), position, player);
+                    newBoard.MovePiecePosition(pieceInCurrentBoard, position);
 
                     choiceBoards.Add(new TransitionalBoard(board, newBoard));
                 }
@@ -101,6 +105,8 @@ public class OpponentAI
 
                     beta = Mathf.Min(beta, child.GetScore());
                 }
+
+                //Debug.Log("Max hit " + extremeNode.GetScore());
 
                 if (beta <= alpha)
                 {

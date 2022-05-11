@@ -58,8 +58,29 @@ public class ScoreKeeper {
         return playerOneScore + playerTwoScore;
     }
 
+    public int GetWinnerCaptureScore()
+    {
+        if (playerOneScore > -playerTwoScore)
+        {
+            return int.MaxValue;
+        } else
+        {
+            return int.MinValue;
+        }
+    }
+
     public int GetScore() {
         return score;
+    }
+
+    public int GetPlayerOneCapturedScore()
+    {
+        return playerOneScore;
+    }
+
+    public int GetPlayerTwoCapturedScore()
+    {
+        return -playerTwoScore;
     }
 
     public ScoreKeeper Clone() {

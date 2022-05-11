@@ -21,9 +21,12 @@ public class TransitionalBoard : IComparer<TransitionalBoard>
 
         Piece pieceMoved = pastBoard.GetPieceAtGridPosition(lastMove.getOrigin());
         Piece pieceCaptured = pastBoard.GetPieceAtGridPosition(lastMove.getDestination());
-        if (pieceCaptured != null)
+        if (pieceCaptured != null && !(lastMove.getOrigin().y < 0 ^ lastMove.getDestination().y >= 0))
         {
             changeValue += pieceCaptured.GetValue() - pieceMoved.GetValue();
+        } else if (pieceCaptured != null && lastMove.getOrigin().y < 0 ^ lastMove.getDestination().y >= 0)
+        {
+            changeValue += 9;
         }
 
         changeValue += Mathf.Abs(lastMove.getOrigin().y) - Mathf.Abs(lastMove.getDestination().y) + 1;

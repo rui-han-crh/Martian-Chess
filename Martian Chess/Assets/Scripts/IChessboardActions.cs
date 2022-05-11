@@ -9,6 +9,8 @@ public interface IChessboardActions {
     public int EvaluateScore();
     public MovementChange GetLastMove();
 
+    public int GetMovesLeft();
+
     public bool isGameOver();
 
     public ScoreKeeper GetScoreKeeper();
